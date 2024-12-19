@@ -1,19 +1,10 @@
-#![allow(unused, dead_code)]
-use std::io::Cursor;
-
-use anyhow::Context;
 use atrium_api::{
-    app::bsky,
-    com::atproto::sync::subscribe_repos::{Account, Commit, Handle, Identity, Tombstone},
-    record,
-    types::{CidLink, Collection as _},
+    app::bsky::feed::post::{RecordEmbedRefs, RecordLabelsRefs},
+    types::Union,
 };
-use bluesky_firehose_stream::FirehoseMessage;
-use cid::Cid;
-use rs_car_sync::CarReader;
-use skystreamer::{
-    types::{commit::Record, CidOld, Frame, Subscription},
-    RepoSubscription,
+use bluesky_firehose_stream::{
+    subscription::{Frame, RepoSubscription},
+    FirehoseMessage, Operation, Record,
 };
 use tracing::{error, info, warn};
 use tracing_subscriber::{fmt::SubscriberBuilder, util::SubscriberInitExt, EnvFilter};
@@ -71,9 +62,35 @@ fn handle_frame(frame: Frame) -> Result<(), bluesky_firehose_stream::Error> {
         commit,
     } = &message
     {
-        //println!("{}", serde_json::to_string(&message).unwrap())
-        if operations.len() == 1 {
-            println!("{}", serde_json::to_string(&message).unwrap())
+        for op in operations {
+            if let Operation::Create {
+                operation_meta,
+                record,
+                cid,
+            } = op
+            {
+                if let Record::Post(post) = record {
+                    if let Some(Union::Refs(RecordEmbedRefs::AppBskyEmbedExternalMain(external))) =
+                        &post.data.embed
+                    {
+                        //println!("external uri {}", external.external.uri);
+                    }
+                    if let Some(Union::Refs(RecordLabelsRefs::ComAtprotoLabelDefsSelfLabels(
+                        labels,
+                    ))) = &post.labels
+                    {
+                        if labels.data.values.len() > 0 {
+                            //println!("{:?}", labels.data.values);
+                        }
+                    }
+                    /*  println!(
+                        "{} {} {}",
+                        did.as_str(),
+                        operation_meta.rkey,
+                        serde_json::to_string(&post).unwrap()
+                    );*/
+                }
+            }
         }
     }
     Ok(())

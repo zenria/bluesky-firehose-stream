@@ -15,6 +15,11 @@ use serde_ipld_dagcbor::DecodeError;
 use skystreamer::types::CidOld;
 use tracing::{error, warn};
 
+pub mod subscription;
+
+#[cfg(feature = "prometheus")]
+pub mod metrics;
+
 #[derive(Serialize)]
 #[serde(tag = "kind")]
 pub enum FirehoseMessage {
@@ -37,10 +42,41 @@ pub enum FirehoseMessage {
     Account(Account),
 }
 
-#[derive(Serialize)]
+impl FirehoseMessage {
+    pub fn kind(&self) -> FirehoseMessageKind {
+        match self {
+            FirehoseMessage::Commit { .. } => FirehoseMessageKind::Commit,
+            FirehoseMessage::Handle(_object) => FirehoseMessageKind::Handle,
+            FirehoseMessage::Tombstone(_object) => FirehoseMessageKind::Tombstone,
+            FirehoseMessage::Identity(_object) => FirehoseMessageKind::Identity,
+            FirehoseMessage::Account(_object) => FirehoseMessageKind::Account,
+        }
+    }
+}
+#[derive(Serialize, Debug, Clone, Copy)]
+#[serde(rename_all = "lowercase")]
+pub enum FirehoseMessageKind {
+    Commit,
+    Handle,
+    Tombstone,
+    Identity,
+    Account,
+}
+impl FirehoseMessageKind {
+    pub fn as_str(&self) -> &str {
+        match self {
+            FirehoseMessageKind::Commit => "commit",
+            FirehoseMessageKind::Handle => "handle",
+            FirehoseMessageKind::Tombstone => "tombstone",
+            FirehoseMessageKind::Identity => "identity",
+            FirehoseMessageKind::Account => "account",
+        }
+    }
+}
+#[derive(Serialize, Debug)]
 #[serde(tag = "type")]
 pub enum Record {
-    Unknown(serde_json::Value),
+    Unknown(ipld_core::ipld::Ipld),
     Post(atrium_api::types::Object<bsky::feed::post::RecordData>),
     Follow(atrium_api::types::Object<bsky::graph::follow::RecordData>),
     Block(atrium_api::types::Object<bsky::graph::block::RecordData>),
@@ -61,10 +97,39 @@ pub enum Operation {
         record: Record,
         cid: String,
     },
+    Update {
+        #[serde(flatten)]
+        operation_meta: OperationMeta,
+        record: Record,
+        cid: String,
+    },
     Delete(OperationMeta),
 }
-
-#[derive(Serialize)]
+impl Operation {
+    pub fn kind(&self) -> OperationKind {
+        match self {
+            Operation::Create { .. } => OperationKind::Create,
+            Operation::Update { .. } => OperationKind::Update,
+            Operation::Delete(_) => OperationKind::Delete,
+        }
+    }
+}
+#[derive(Debug, Clone, Copy)]
+pub enum OperationKind {
+    Create,
+    Update,
+    Delete,
+}
+impl OperationKind {
+    pub fn as_str(&self) -> &str {
+        match self {
+            OperationKind::Create => "create",
+            OperationKind::Update => "update",
+            OperationKind::Delete => "delete",
+        }
+    }
+}
+#[derive(Serialize, Debug)]
 pub struct OperationMeta {
     pub collection: String,
     pub rkey: String,
@@ -72,13 +137,16 @@ pub struct OperationMeta {
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("Unknown frame type {0}")]
-    UnknownFrameType(String, skystreamer::types::MessageFrame),
+    UnknownFrameType(String, crate::subscription::types::MessageFrame),
     #[error("No type in frame")]
-    NoTypeInFrame(skystreamer::types::MessageFrame),
+    NoTypeInFrame(crate::subscription::types::MessageFrame),
     #[error("Error Frame")]
-    FrameError(skystreamer::types::ErrorFrame),
+    FrameError(crate::subscription::types::ErrorFrame),
     #[error("Frame decode error {0}")]
-    DagCborDecodeError(DecodeError<Infallible>, skystreamer::types::MessageFrame),
+    DagCborDecodeError(
+        DecodeError<Infallible>,
+        crate::subscription::types::MessageFrame,
+    ),
     #[error("CAR decode error {0}")]
     CarDecodeError(CarDecodeError, Commit),
     #[error("No block found for commit {did:?} {rev} {operation} {path}")]
@@ -88,14 +156,21 @@ pub enum Error {
         did: Did,
         path: String,
     },
+    #[error("Unknown commit operation `{operation}` {}/{}", operation_meta.collection, operation_meta.rkey)]
+    UnknownCommitOperation {
+        operation: String,
+        operation_meta: OperationMeta,
+        record: Record,
+        cid: String,
+    },
 }
 
-impl TryFrom<skystreamer::types::Frame> for FirehoseMessage {
+impl TryFrom<crate::subscription::Frame> for FirehoseMessage {
     type Error = Error;
 
-    fn try_from(frame: skystreamer::types::Frame) -> Result<Self, Self::Error> {
+    fn try_from(frame: crate::subscription::Frame) -> Result<Self, Self::Error> {
         match frame {
-            skystreamer::types::Frame::Message(Some(t), message_frame) => match t.as_str() {
+            crate::subscription::Frame::Message(Some(t), message_frame) => match t.as_str() {
                 "#commit" => {
                     let commit =
                         serde_ipld_dagcbor::from_slice::<Commit>(message_frame.body.as_slice())
@@ -207,8 +282,10 @@ impl TryFrom<skystreamer::types::Frame> for FirehoseMessage {
                                 ),
 
                                 _ => Record::Unknown(
-                                    serde_ipld_dagcbor::from_slice::<serde_json::Value>(&block.1)
-                                        .map_err(|e| {
+                                    serde_ipld_dagcbor::from_slice::<ipld_core::ipld::Ipld>(
+                                        &block.1,
+                                    )
+                                    .map_err(|e| {
                                         Error::DagCborDecodeError(e, message_frame.clone())
                                     })?,
                                 ),
@@ -220,14 +297,34 @@ impl TryFrom<skystreamer::types::Frame> for FirehoseMessage {
                                 path: op.path.clone(),
                             })?,
                         };
-                        operations.push(Operation::Create {
-                            operation_meta: OperationMeta {
-                                collection: nsid.to_string(),
-                                rkey: rkey.unwrap_or_default().to_string(),
+                        let operation = match op.action.as_str() {
+                            "create" => Operation::Create {
+                                operation_meta: OperationMeta {
+                                    collection: nsid.to_string(),
+                                    rkey: rkey.unwrap_or_default().to_string(),
+                                },
+                                record,
+                                cid: op_cid.to_string(),
                             },
-                            record,
-                            cid: op_cid.to_string(),
-                        });
+                            "update" => Operation::Update {
+                                operation_meta: OperationMeta {
+                                    collection: nsid.to_string(),
+                                    rkey: rkey.unwrap_or_default().to_string(),
+                                },
+                                record,
+                                cid: op_cid.to_string(),
+                            },
+                            other => Err(Error::UnknownCommitOperation {
+                                operation: other.to_string(),
+                                operation_meta: OperationMeta {
+                                    collection: nsid.to_string(),
+                                    rkey: rkey.unwrap_or_default().to_string(),
+                                },
+                                record,
+                                cid: op_cid.to_string(),
+                            })?,
+                        };
+                        operations.push(operation);
                     }
                     Ok(FirehoseMessage::Commit {
                         operations,
@@ -255,10 +352,12 @@ impl TryFrom<skystreamer::types::Frame> for FirehoseMessage {
                 )),
                 t => Err(Error::UnknownFrameType(t.to_string(), message_frame))?,
             },
-            skystreamer::types::Frame::Message(None, message_frame) => {
+            crate::subscription::types::Frame::Message(None, message_frame) => {
                 Err(Error::NoTypeInFrame(message_frame))
             }
-            skystreamer::types::Frame::Error(error_frame) => Err(Error::FrameError(error_frame)),
+            crate::subscription::types::Frame::Error(error_frame) => {
+                Err(Error::FrameError(error_frame))
+            }
         }
     }
 }
