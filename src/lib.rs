@@ -74,7 +74,7 @@ impl FirehoseMessageKind {
     }
 }
 #[derive(Serialize, Debug)]
-#[serde(tag = "type")]
+#[serde(untagged)]
 pub enum Record {
     Unknown(ipld_core::ipld::Ipld),
     Post(atrium_api::types::Object<bsky::feed::post::RecordData>),
