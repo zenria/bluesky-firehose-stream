@@ -89,7 +89,7 @@ async fn firehose_consume_loop() {
                 error!("Unable to handle frame: {e}");
             }
         }
-        error!("Timeout occured, reconnecting...");
+        error!("Timeout occurred, reconnecting...");
     }
 }
 
