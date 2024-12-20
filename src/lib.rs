@@ -209,78 +209,51 @@ impl TryFrom<crate::subscription::Frame> for FirehoseMessage {
                             cid == op_cid
                         }) {
                             Some(block) => match nsid {
-                                bsky::feed::Post::NSID => Record::Post(
-                                    serde_ipld_dagcbor::from_slice::<
-                                        atrium_api::app::bsky::feed::post::Record,
-                                    >(&block.1)
-                                    .map_err(|e| {
-                                        Error::DagCborDecodeError(e, message_frame.clone())
-                                    })?,
-                                ),
+                                bsky::feed::Post::NSID => {
+                                    Record::Post(serde_ipld_dagcbor::from_slice(&block.1).map_err(
+                                        |e| Error::DagCborDecodeError(e, message_frame.clone()),
+                                    )?)
+                                }
                                 bsky::graph::Follow::NSID => Record::Follow(
-                                    serde_ipld_dagcbor::from_slice::<
-                                        atrium_api::app::bsky::graph::follow::Record,
-                                    >(&block.1)
-                                    .map_err(|e| {
+                                    serde_ipld_dagcbor::from_slice(&block.1).map_err(|e| {
                                         Error::DagCborDecodeError(e, message_frame.clone())
                                     })?,
                                 ),
                                 bsky::graph::Block::NSID => Record::Block(
-                                    serde_ipld_dagcbor::from_slice::<
-                                        atrium_api::app::bsky::graph::block::Record,
-                                    >(&block.1)
-                                    .map_err(|e| {
+                                    serde_ipld_dagcbor::from_slice(&block.1).map_err(|e| {
                                         Error::DagCborDecodeError(e, message_frame.clone())
                                     })?,
                                 ),
                                 bsky::feed::Repost::NSID => Record::Repost(
-                                    serde_ipld_dagcbor::from_slice::<
-                                        atrium_api::app::bsky::feed::repost::Record,
-                                    >(&block.1)
-                                    .map_err(|e| {
+                                    serde_ipld_dagcbor::from_slice(&block.1).map_err(|e| {
                                         Error::DagCborDecodeError(e, message_frame.clone())
                                     })?,
                                 ),
-                                bsky::feed::Like::NSID => Record::Like(
-                                    serde_ipld_dagcbor::from_slice::<
-                                        atrium_api::app::bsky::feed::like::Record,
-                                    >(&block.1)
-                                    .map_err(|e| {
-                                        Error::DagCborDecodeError(e, message_frame.clone())
-                                    })?,
-                                ),
+                                bsky::feed::Like::NSID => {
+                                    Record::Like(serde_ipld_dagcbor::from_slice(&block.1).map_err(
+                                        |e| Error::DagCborDecodeError(e, message_frame.clone()),
+                                    )?)
+                                }
                                 bsky::graph::Listitem::NSID => Record::Listitem(
-                                    serde_ipld_dagcbor::from_slice::<
-                                        atrium_api::app::bsky::graph::listitem::Record,
-                                    >(&block.1)
-                                    .map_err(|e| {
+                                    serde_ipld_dagcbor::from_slice(&block.1).map_err(|e| {
                                         Error::DagCborDecodeError(e, message_frame.clone())
                                     })?,
                                 ),
                                 bsky::feed::Generator::NSID => Record::Generator(
-                                    serde_ipld_dagcbor::from_slice::<
-                                        atrium_api::app::bsky::feed::generator::Record,
-                                    >(&block.1)
-                                    .map_err(|e| {
+                                    serde_ipld_dagcbor::from_slice(&block.1).map_err(|e| {
                                         Error::DagCborDecodeError(e, message_frame.clone())
                                     })?,
                                 ),
                                 bsky::actor::Profile::NSID => Record::Profile(
-                                    serde_ipld_dagcbor::from_slice::<
-                                        atrium_api::app::bsky::actor::profile::Record,
-                                    >(&block.1)
-                                    .map_err(|e| {
+                                    serde_ipld_dagcbor::from_slice(&block.1).map_err(|e| {
                                         Error::DagCborDecodeError(e, message_frame.clone())
                                     })?,
                                 ),
-                                bsky::graph::List::NSID => Record::List(
-                                    serde_ipld_dagcbor::from_slice::<
-                                        atrium_api::app::bsky::graph::list::Record,
-                                    >(&block.1)
-                                    .map_err(|e| {
-                                        Error::DagCborDecodeError(e, message_frame.clone())
-                                    })?,
-                                ),
+                                bsky::graph::List::NSID => {
+                                    Record::List(serde_ipld_dagcbor::from_slice(&block.1).map_err(
+                                        |e| Error::DagCborDecodeError(e, message_frame.clone()),
+                                    )?)
+                                }
                                 bsky::graph::Starterpack::NSID => Record::Starterpack(
                                     serde_ipld_dagcbor::from_slice(&block.1).map_err(|e| {
                                         Error::DagCborDecodeError(e, message_frame.clone())
