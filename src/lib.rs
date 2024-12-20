@@ -1,7 +1,7 @@
 use std::{convert::Infallible, io::Cursor};
 
 use atrium_api::{
-    app::bsky,
+    app::bsky::{self},
     com::atproto::sync::subscribe_repos::{Account, Commit, Handle, Identity, Tombstone},
     types::{
         string::{Datetime, Did},
@@ -86,6 +86,7 @@ pub enum Record {
     Generator(atrium_api::types::Object<bsky::feed::generator::RecordData>),
     Profile(atrium_api::types::Object<bsky::actor::profile::RecordData>),
     List(atrium_api::types::Object<bsky::graph::list::RecordData>),
+    Starterpack(atrium_api::types::Object<bsky::graph::starterpack::RecordData>),
 }
 
 #[derive(Serialize)]
@@ -277,6 +278,11 @@ impl TryFrom<crate::subscription::Frame> for FirehoseMessage {
                                         atrium_api::app::bsky::graph::list::Record,
                                     >(&block.1)
                                     .map_err(|e| {
+                                        Error::DagCborDecodeError(e, message_frame.clone())
+                                    })?,
+                                ),
+                                bsky::graph::Starterpack::NSID => Record::Starterpack(
+                                    serde_ipld_dagcbor::from_slice(&block.1).map_err(|e| {
                                         Error::DagCborDecodeError(e, message_frame.clone())
                                     })?,
                                 ),
