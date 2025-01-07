@@ -6,8 +6,7 @@ use atrium_api::{
     types::Union,
 };
 use bluesky_firehose_stream::{
-    subscription::{Frame, RepoSubscription},
-    FirehoseMessage, Operation, Record,
+    frame::Frame, subscription::RepoSubscription, FirehoseMessage, Operation, Record,
 };
 use tracing::{error, info, warn};
 use tracing_subscriber::{fmt::SubscriberBuilder, util::SubscriberInitExt, EnvFilter};

@@ -15,6 +15,7 @@ use serde_ipld_dagcbor::DecodeError;
 use subscription::types::CidOld;
 use tracing::{error, warn};
 
+pub mod frame;
 pub mod subscription;
 
 #[cfg(feature = "prometheus")]
@@ -138,16 +139,13 @@ pub struct OperationMeta {
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("Unknown frame type {0}")]
-    UnknownFrameType(String, crate::subscription::types::MessageFrame),
+    UnknownFrameType(String, crate::frame::MessageFrame),
     #[error("No type in frame")]
-    NoTypeInFrame(crate::subscription::types::MessageFrame),
+    NoTypeInFrame(crate::frame::MessageFrame),
     #[error("Error Frame")]
-    FrameError(crate::subscription::types::ErrorFrame),
+    FrameError(crate::frame::ErrorFrame),
     #[error("Frame decode error {0}")]
-    DagCborDecodeError(
-        DecodeError<Infallible>,
-        crate::subscription::types::MessageFrame,
-    ),
+    DagCborDecodeError(DecodeError<Infallible>, crate::frame::MessageFrame),
     #[error("CAR decode error {0}")]
     CarDecodeError(CarDecodeError, Commit),
     #[error("No block found for commit {did:?} {rev} {operation} {path}")]
@@ -166,12 +164,12 @@ pub enum Error {
     },
 }
 
-impl TryFrom<crate::subscription::Frame> for FirehoseMessage {
+impl TryFrom<crate::frame::Frame> for FirehoseMessage {
     type Error = Error;
 
-    fn try_from(frame: crate::subscription::Frame) -> Result<Self, Self::Error> {
+    fn try_from(frame: crate::frame::Frame) -> Result<Self, Self::Error> {
         match frame {
-            crate::subscription::Frame::Message(Some(t), message_frame) => match t.as_str() {
+            crate::frame::Frame::Message(Some(t), message_frame) => match t.as_str() {
                 "#commit" => {
                     let commit =
                         serde_ipld_dagcbor::from_slice::<Commit>(message_frame.body.as_slice())
@@ -331,12 +329,10 @@ impl TryFrom<crate::subscription::Frame> for FirehoseMessage {
                 )),
                 t => Err(Error::UnknownFrameType(t.to_string(), message_frame))?,
             },
-            crate::subscription::types::Frame::Message(None, message_frame) => {
+            crate::frame::Frame::Message(None, message_frame) => {
                 Err(Error::NoTypeInFrame(message_frame))
             }
-            crate::subscription::types::Frame::Error(error_frame) => {
-                Err(Error::FrameError(error_frame))
-            }
+            crate::frame::Frame::Error(error_frame) => Err(Error::FrameError(error_frame)),
         }
     }
 }

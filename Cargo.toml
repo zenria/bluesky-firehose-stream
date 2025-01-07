@@ -28,7 +28,6 @@ url = "2.2.2"
 tokio-tungstenite = { version = "0.24", features = ["native-tls", "url"] }
 
 futures = "0.3"
-rustls = { version = "0.23.19", features = ["ring"] }
 dotenvy = { version = "0.15", optional = true }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = [

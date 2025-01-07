@@ -6,8 +6,7 @@ use axum::{
     Router,
 };
 use bluesky_firehose_stream::{
-    metrics::create_counter_with_labels,
-    subscription::{Frame, RepoSubscription},
+    frame::Frame, metrics::create_counter_with_labels, subscription::RepoSubscription,
     FirehoseMessage, Operation,
 };
 use lazy_static::lazy_static;
