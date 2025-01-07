@@ -2,6 +2,7 @@
 name = "bluesky-firehose-stream"
 version = "0.1.0"
 edition = "2021"
+license = "MIT or Apache-2.0"
 
 [features]
 default = []
@@ -38,9 +39,12 @@ thiserror = "2"
 ipld-core = "0.4"
 trait-variant = "0.1.2"
 prometheus = { version = "0.13", optional = true }
-axum = { version = "0.7", optional = true }
+axum = { version = "0.8", optional = true }
 lazy_static = "1"
 
 [[example]]
 name = "bluesky-prometheus-exporter"
 required-features = ["examples"]
+
+[[example]]
+name = "sandbox"
