@@ -12,7 +12,7 @@ use cid::Cid;
 use rs_car_sync::CarDecodeError;
 use serde::Serialize;
 use serde_ipld_dagcbor::DecodeError;
-use skystreamer::types::CidOld;
+use subscription::types::CidOld;
 use tracing::{error, warn};
 
 pub mod subscription;

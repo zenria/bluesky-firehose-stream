@@ -30,11 +30,12 @@ atty = "0.2"
 log = "0.4"
 lingua = "1.6.2"
 clap = { version = "4", features = ["derive", "env"] }
-skystreamer = "0.2"
 chrono = "0.4"
 serde_ipld_dagcbor = "0.6"
 rs-car-sync = "0.4"
 cid = "0.11"
+cid_old = { package = "cid", version = "0.10" }
+multihash = "0.19"
 thiserror = "2"
 ipld-core = "0.4"
 trait-variant = "0.1.2"
