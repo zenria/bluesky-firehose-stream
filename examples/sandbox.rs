@@ -47,29 +47,29 @@ async fn main() -> anyhow::Result<()> {
                 error!("Unable to handle frame: {e}");
             }
         }
-        error!("Timeout occured, reconnecting...");
+        error!("Timeout occurred, reconnecting...");
     }
 }
 fn handle_frame(frame: Frame) -> Result<(), bluesky_firehose_stream::Error> {
     let message = FirehoseMessage::try_from(frame)?;
 
     // for now do nothing
-    if let FirehoseMessage::Identity(identity) = &message {
+    if let FirehoseMessage::Identity(_identity) = &message {
         //println!("{}", serde_json::to_string(&identity).unwrap())
     }
     if let FirehoseMessage::Commit {
-        did,
+        did: _,
         operations,
-        rev,
-        time,
-        commit,
+        rev: _,
+        time: _,
+        commit: _,
     } = &message
     {
         for op in operations {
             if let Operation::Create {
-                operation_meta,
+                operation_meta: _,
                 record,
-                cid,
+                cid: _,
             } = op
             {
                 if let Record::Starterpack(pack) = record {
