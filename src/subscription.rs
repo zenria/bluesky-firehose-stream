@@ -27,14 +27,12 @@ pub enum Error {
     AtriumError(String),
 }
 
-pub(crate) type Result<T> = std::result::Result<T, Error>;
-
 pub struct RepoSubscription {
     stream: WebSocketStream<MaybeTlsStream<TcpStream>>,
 }
 
 impl RepoSubscription {
-    pub async fn new(bgs: &str) -> std::result::Result<Self, Error> {
+    pub async fn new(bgs: &str) -> Result<Self, Error> {
         // todo: somehow get the websocket to update the damn params
         let request = format!("wss://{bgs}/xrpc/{NSID}").into_client_request()?;
         // request.
@@ -42,7 +40,7 @@ impl RepoSubscription {
         tracing::debug!("Connected to websocket: {:?}", res);
         Ok(RepoSubscription { stream })
     }
-    pub async fn next(&mut self) -> Option<Result<Frame>> {
+    pub async fn next(&mut self) -> Option<Result<Frame, Error>> {
         if let Some(Ok(Message::Binary(data))) = self.stream.next().await {
             #[cfg(feature = "prometheus")]
             {
