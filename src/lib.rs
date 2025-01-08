@@ -24,6 +24,7 @@ pub mod metrics;
 
 #[derive(Serialize)]
 #[serde(tag = "kind")]
+#[non_exhaustive]
 pub enum FirehoseMessage {
     #[serde(rename = "commit")]
     Commit {
@@ -77,6 +78,7 @@ impl FirehoseMessageKind {
 }
 #[derive(Serialize, Debug)]
 #[serde(untagged)]
+#[non_exhaustive]
 pub enum Record {
     Unknown(ipld_core::ipld::Ipld),
     Post(atrium_api::types::Object<bsky::feed::post::RecordData>),
