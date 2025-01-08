@@ -6,10 +6,12 @@ edition = "2021"
 license = "MIT or Apache-2.0"
 
 [features]
-default = []
+default = ["websocket"]
 prometheus = ["dep:prometheus"]
+websocket = ["dep:tokio-tungstenite"]
 examples = [
     "prometheus",
+    "websocket",
     "dep:axum",
     "dep:dotenvy",
     "dep:tracing-subscriber",
@@ -26,7 +28,10 @@ anyhow = { version = "1", optional = true }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 url = "2.2.2"
-tokio-tungstenite = { version = "0.24", features = ["native-tls", "url"] }
+tokio-tungstenite = { version = "0.24", features = [
+    "native-tls",
+    "url",
+], optional = true }
 
 futures = "0.3"
 dotenvy = { version = "0.15", optional = true }

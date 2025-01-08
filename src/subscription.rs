@@ -1,5 +1,3 @@
-pub mod types;
-
 pub const BLUESKY_FEED_DOMAIN: &str = "bsky.network";
 use atrium_api::{com::atproto::sync::subscribe_repos::NSID, types::CidLink};
 

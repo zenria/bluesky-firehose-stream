@@ -9,13 +9,14 @@ use atrium_api::{
     },
 };
 use cid::Cid;
+use multihash::Multihash;
 use rs_car_sync::CarDecodeError;
 use serde::Serialize;
 use serde_ipld_dagcbor::DecodeError;
-use subscription::types::CidOld;
 use tracing::{error, warn};
 
 pub mod frame;
+#[cfg(feature = "websocket")]
 pub mod subscription;
 
 #[cfg(feature = "prometheus")]
@@ -334,5 +335,28 @@ impl TryFrom<crate::frame::Frame> for FirehoseMessage {
             }
             crate::frame::Frame::Error(error_frame) => Err(Error::FrameError(error_frame)),
         }
+    }
+}
+
+pub struct CidOld(cid_old::Cid);
+
+impl From<cid_old::Cid> for CidOld {
+    fn from(value: cid_old::Cid) -> Self {
+        Self(value)
+    }
+}
+impl TryFrom<CidOld> for Cid {
+    type Error = cid::Error;
+    fn try_from(value: CidOld) -> std::result::Result<Self, Self::Error> {
+        let version = match value.0.version() {
+            cid_old::Version::V0 => cid::Version::V0,
+            cid_old::Version::V1 => cid::Version::V1,
+        };
+
+        let codec = value.0.codec();
+        let hash = value.0.hash();
+        let hash = Multihash::from_bytes(&hash.to_bytes())?;
+
+        Self::new(version, codec, hash)
     }
 }
