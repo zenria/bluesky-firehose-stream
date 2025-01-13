@@ -118,6 +118,21 @@ impl Operation {
             Operation::Delete(_) => OperationKind::Delete,
         }
     }
+    pub fn operation_meta(&self) -> &OperationMeta {
+        match self {
+            Operation::Create {
+                operation_meta,
+                record: _,
+                cid: _,
+            } => operation_meta,
+            Operation::Update {
+                operation_meta,
+                record: _,
+                cid: _,
+            } => operation_meta,
+            Operation::Delete(operation_meta) => operation_meta,
+        }
+    }
 }
 #[derive(Debug, Clone, Copy)]
 pub enum OperationKind {

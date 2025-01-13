@@ -8,7 +8,7 @@ use axum::{
 };
 use bluesky_firehose_stream::{
     frame::Frame, metrics::create_counter_with_labels, subscription::RepoSubscription,
-    FirehoseMessage, Operation,
+    FirehoseMessage,
 };
 use lazy_static::lazy_static;
 use prometheus::{Encoder, IntCounterVec, TextEncoder};
@@ -107,16 +107,9 @@ fn handle_frame(frame: Frame) -> Result<(), bluesky_firehose_stream::Error> {
     } = &message
     {
         for op in operations {
-            if let Operation::Create {
-                operation_meta,
-                record: _,
-                cid: _,
-            } = op
-            {
-                FIREHOSE_COMMIT_COUNTER
-                    .with_label_values(&[op.kind().as_str(), operation_meta.collection.as_str()])
-                    .inc();
-            }
+            FIREHOSE_COMMIT_COUNTER
+                .with_label_values(&[op.kind().as_str(), op.operation_meta().collection.as_str()])
+                .inc();
         }
     }
     Ok(())
