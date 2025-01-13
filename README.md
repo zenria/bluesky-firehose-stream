@@ -5,17 +5,26 @@ Stream and parse bluesky firehose messages.
 This crate is heavily inspired from [`skystreamer`](https://github.com/FyraLabs/skystreamer). Some
 very small amount of code has been partially copied and adapted from the original project (types.rs and subscription.rs).
 
-Contrary to `skystreamer`, firehose message frames are fully decoded in [`atrium`](https://github.com/sugyan/atrium)
+Contrary to `skystreamer`, firehose message frames are fully decoded into [`atrium`](https://github.com/sugyan/atrium)
 types, without further conversion.
 
-Unknown message kinds are also decoded as an [`Ipld`](https://docs.rs/ipld-core/0.4.1/ipld_core/ipld/enum.Ipld.html)
-enum allowing this create to handle even the more exotic events.
+Messages with unknown kind are also decoded as an [`Ipld`](https://docs.rs/ipld-core/0.4.1/ipld_core/ipld/enum.Ipld.html)
+enum allowing this crate to handle even the more exotic events.
+
+I'm currently running `bluesky-prometheus-exporter` for a month or so without any crash and only a handful of errors per days (invalid frames).
 
 ```rust
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() {
     loop {
-        let mut subscription = RepoSubscription::new("bsky.network").await.unwrap();
+        let mut subscription = match RepoSubscription::new("bsky.network").await {
+            Ok(sub) => sub,
+            Err(e) => {
+                error!("Connecting to the bluesky firehose, {e}");
+                tokio::time::sleep(Duration::from_secs(1)).await;
+                continue;
+            }
+        };
         info!("Connected to firehose, let's stream");
         let timeout_duration = tokio::time::Duration::from_secs(30);
         while let Ok(Some(frame)) =
@@ -37,8 +46,14 @@ async fn main() -> anyhow::Result<()> {
 }
 fn handle_frame(frame: Frame) -> Result<(), bluesky_firehose_stream::Error> {
     let message = FirehoseMessage::try_from(frame)?;
-    // something with the decoded message here 🚀
+    // do something with the decoded message here 🚀
 }
+```
+
+## Run examples
+
+```bash
+cargo run --example bluesky-prometheus-exporter --features examples
 ```
 
 ## License
