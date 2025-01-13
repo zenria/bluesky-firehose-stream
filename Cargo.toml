@@ -3,7 +3,7 @@ name = "bluesky-firehose-stream"
 description = "Decode bluesky firehose messages"
 version = "0.1.0"
 edition = "2021"
-license = "MIT or Apache-2.0"
+license = "MIT"
 
 [features]
 default = ["websocket"]
