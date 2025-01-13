@@ -2,6 +2,7 @@ use std::{net::SocketAddr, time::Duration};
 
 use anyhow::Context;
 use axum::{
+    http::StatusCode,
     routing::{any, get},
     Router,
 };
@@ -11,7 +12,6 @@ use bluesky_firehose_stream::{
 };
 use lazy_static::lazy_static;
 use prometheus::{Encoder, IntCounterVec, TextEncoder};
-use reqwest::StatusCode;
 use tracing::{error, info, warn};
 use tracing_subscriber::{fmt::SubscriberBuilder, util::SubscriberInitExt, EnvFilter};
 
