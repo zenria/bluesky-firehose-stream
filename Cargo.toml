@@ -1,7 +1,7 @@
 [package]
 name = "bluesky-firehose-stream"
 description = "Decode bluesky firehose messages"
-version = "0.1.2"
+version = "0.2.0"
 edition = "2021"
 license = "MIT"
 
@@ -21,7 +21,7 @@ examples = [
 ]
 
 [dependencies]
-atrium-api = "0.24.8"
+atrium-api = "0.25"
 tokio = { version = "1", features = [
     "rt-multi-thread",
     "time",
@@ -52,7 +52,7 @@ atty = { version = "0.2", optional = true }
 dotenvy = { version = "0.15", optional = true }
 anyhow = { version = "1", optional = true }
 serde_json = { version = "1", optional = true }
-prometheus = { version = "0.13", optional = true }
+prometheus = { version = "0.14", optional = true }
 axum = { version = "0.8", optional = true }
 
 [[example]]

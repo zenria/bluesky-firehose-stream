@@ -2,9 +2,9 @@ use std::{convert::Infallible, io::Cursor};
 
 use atrium_api::{
     app::bsky::{self},
-    com::atproto::sync::subscribe_repos::{Account, Commit, Handle, Identity, Tombstone},
+    com::atproto::sync::subscribe_repos::{Account, Commit, Identity},
     types::{
-        string::{Datetime, Did},
+        string::{Datetime, Did, Tid},
         Collection as _,
     },
 };
@@ -29,16 +29,12 @@ pub enum FirehoseMessage {
     #[serde(rename = "commit")]
     Commit {
         did: Did,
-        rev: String,
+        rev: Tid,
         time: Datetime,
         operations: Vec<Operation>,
         #[serde(skip)]
         commit: Commit,
     },
-    #[serde(rename = "handle")]
-    Handle(Handle),
-    #[serde(rename = "tombstone")]
-    Tombstone(Tombstone),
     #[serde(rename = "identity")]
     Identity(Identity),
     #[serde(rename = "account")]
@@ -49,8 +45,6 @@ impl FirehoseMessage {
     pub fn kind(&self) -> FirehoseMessageKind {
         match self {
             FirehoseMessage::Commit { .. } => FirehoseMessageKind::Commit,
-            FirehoseMessage::Handle(_object) => FirehoseMessageKind::Handle,
-            FirehoseMessage::Tombstone(_object) => FirehoseMessageKind::Tombstone,
             FirehoseMessage::Identity(_object) => FirehoseMessageKind::Identity,
             FirehoseMessage::Account(_object) => FirehoseMessageKind::Account,
         }
@@ -60,8 +54,6 @@ impl FirehoseMessage {
 #[serde(rename_all = "lowercase")]
 pub enum FirehoseMessageKind {
     Commit,
-    Handle,
-    Tombstone,
     Identity,
     Account,
 }
@@ -69,8 +61,6 @@ impl FirehoseMessageKind {
     pub fn as_str(&self) -> &str {
         match self {
             FirehoseMessageKind::Commit => "commit",
-            FirehoseMessageKind::Handle => "handle",
-            FirehoseMessageKind::Tombstone => "tombstone",
             FirehoseMessageKind::Identity => "identity",
             FirehoseMessageKind::Account => "account",
         }
@@ -166,10 +156,10 @@ pub enum Error {
     DagCborDecodeError(DecodeError<Infallible>, crate::frame::MessageFrame),
     #[error("CAR decode error {0}")]
     CarDecodeError(CarDecodeError, Commit),
-    #[error("No block found for commit {did:?} {rev} {operation} {path}")]
+    #[error("No block found for commit {did:?} {0} {operation} {path}", rev.as_str())]
     NoBlockForCommit {
         operation: String,
-        rev: String,
+        rev: Tid,
         did: Did,
         path: String,
     },
@@ -333,14 +323,7 @@ impl TryFrom<crate::frame::Frame> for FirehoseMessage {
                     serde_ipld_dagcbor::from_slice(message_frame.body.as_slice())
                         .map_err(|e| Error::DagCborDecodeError(e, message_frame))?,
                 )),
-                "#handle" => Ok(FirehoseMessage::Handle(
-                    serde_ipld_dagcbor::from_slice(message_frame.body.as_slice())
-                        .map_err(|e| Error::DagCborDecodeError(e, message_frame))?,
-                )),
-                "#tombstone" => Ok(FirehoseMessage::Tombstone(
-                    serde_ipld_dagcbor::from_slice(message_frame.body.as_slice())
-                        .map_err(|e| Error::DagCborDecodeError(e, message_frame))?,
-                )),
+
                 "#identity" => Ok(FirehoseMessage::Identity(
                     serde_ipld_dagcbor::from_slice(message_frame.body.as_slice())
                         .map_err(|e| Error::DagCborDecodeError(e, message_frame))?,
