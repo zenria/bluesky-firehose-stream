@@ -30,6 +30,7 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     tokio::spawn(firehose_consume_loop());
+    tokio::spawn(reset_commit_counter_loop());
 
     let routes = Router::new()
         .route("/metrics", get(|| async { generate_metrics() }))
@@ -113,6 +114,14 @@ fn handle_frame(frame: Frame) -> Result<(), bluesky_firehose_stream::Error> {
         }
     }
     Ok(())
+}
+
+/// Reset commit counter every hour to avoid storing bunch of rare labels
+async fn reset_commit_counter_loop() {
+    loop {
+        tokio::time::sleep(Duration::from_secs(3600)).await;
+        FIREHOSE_COMMIT_COUNTER.reset();
+    }
 }
 
 lazy_static! {
