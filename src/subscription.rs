@@ -44,7 +44,7 @@ impl RepoSubscription {
             {
                 metrics::FIREHOSE_BYTE_COUNTER.inc_by(data.len() as u64);
             }
-            Some(Frame::try_from(data.as_slice()).map_err(Error::from))
+            Some(Frame::try_from(data.as_ref()).map_err(Error::from))
         } else {
             None
         }

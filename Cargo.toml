@@ -41,7 +41,7 @@ thiserror = "2"
 ipld-core = "0.4"
 lazy_static = "1"
 
-tokio-tungstenite = { version = "0.24", features = [
+tokio-tungstenite = { version = "0.27", features = [
     "native-tls",
     "url",
 ], optional = true }
