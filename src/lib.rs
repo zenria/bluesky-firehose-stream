@@ -1,5 +1,8 @@
 use std::{convert::Infallible, io::Cursor};
 
+//re-export atrium_api
+pub use atrium_api;
+
 use atrium_api::{
     app::bsky::{self},
     com::atproto::sync::subscribe_repos::{Account, Commit, Identity},
