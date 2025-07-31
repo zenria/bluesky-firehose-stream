@@ -56,6 +56,20 @@ fn handle_frame(frame: Frame) -> Result<(), bluesky_firehose_stream::Error> {
 cargo run --example bluesky-prometheus-exporter --features examples
 ```
 
+## TLS backend
+
+By default, this crate depends on `native-tls` for handling TLS when connecting to the fireshose. To switch to `rustls` backend,
+use `rustls-tls-native-roots` or `rustls-tls-webpki-roots` features.
+
+eg.
+
+```toml
+bluesky-firehose-stream = { version="*", features = [
+    "websocket",
+    "rustls-tls-native-roots",
+], default-features = false }
+```
+
 ## License
 
 Licensed under MIT license ([LICENSE-MIT](LICENSE-MIT) or <http://opensource.org/licenses/MIT>)
