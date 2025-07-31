@@ -6,9 +6,6 @@ edition = "2024"
 license = "MIT"
 
 [features]
-default = ["websocket"]
-prometheus = ["dep:prometheus"]
-websocket = ["dep:tokio-tungstenite"]
 examples = [
     "prometheus",
     "websocket",
@@ -19,6 +16,12 @@ examples = [
     "dep:anyhow",
     "dep:serde_json",
 ]
+default = ["websocket", "native-tls"]
+prometheus = ["dep:prometheus"]
+websocket = ["tokio-tungstenite/connect"]
+native-tls = ["tokio-tungstenite?/native-tls"]
+rustls-tls-native-roots = ["tokio-tungstenite?/rustls-tls-native-roots"]
+rustls-tls-webpki-roots = ["tokio-tungstenite?/rustls-tls-native-roots"]
 
 [dependencies]
 atrium-api = "0.25"
@@ -42,9 +45,8 @@ ipld-core = "0.4"
 lazy_static = "1"
 
 tokio-tungstenite = { version = "0.27", features = [
-    "native-tls",
     "url",
-], optional = true }
+], optional = true, default-features = false }
 tracing-subscriber = { version = "0.3", features = [
     "env-filter",
 ], optional = true }
