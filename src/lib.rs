@@ -7,12 +7,10 @@ use atrium_api::{
     app::bsky::{self},
     com::atproto::sync::subscribe_repos::{Account, Commit, Identity},
     types::{
-        string::{Datetime, Did, Tid},
         Collection as _,
+        string::{Datetime, Did, Tid},
     },
 };
-use cid::Cid;
-use multihash::Multihash;
 use rs_car_sync::CarDecodeError;
 use serde::Serialize;
 use serde_ipld_dagcbor::DecodeError;
@@ -213,10 +211,7 @@ impl TryFrom<crate::frame::Frame> for FirehoseMessage {
                         };
                         let op_cid = op_cid_acid.0;
 
-                        let record = match blocks.iter().find(|(cid, _data)| {
-                            let cid: Cid = CidOld::from(*cid).try_into().unwrap();
-                            cid == op_cid
-                        }) {
+                        let record = match blocks.iter().find(|(cid, _data)| cid == &op_cid) {
                             Some(block) => match nsid {
                                 bsky::feed::Post::NSID => {
                                     Record::Post(serde_ipld_dagcbor::from_slice(&block.1).map_err(
@@ -338,28 +333,5 @@ impl TryFrom<crate::frame::Frame> for FirehoseMessage {
             }
             crate::frame::Frame::Error(error_frame) => Err(Error::FrameError(error_frame)),
         }
-    }
-}
-
-pub struct CidOld(cid_old::Cid);
-
-impl From<cid_old::Cid> for CidOld {
-    fn from(value: cid_old::Cid) -> Self {
-        Self(value)
-    }
-}
-impl TryFrom<CidOld> for Cid {
-    type Error = cid::Error;
-    fn try_from(value: CidOld) -> std::result::Result<Self, Self::Error> {
-        let version = match value.0.version() {
-            cid_old::Version::V0 => cid::Version::V0,
-            cid_old::Version::V1 => cid::Version::V1,
-        };
-
-        let codec = value.0.codec();
-        let hash = value.0.hash();
-        let hash = Multihash::from_bytes(&hash.to_bytes())?;
-
-        Self::new(version, codec, hash)
     }
 }

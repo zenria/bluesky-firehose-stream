@@ -1,7 +1,7 @@
 [package]
 name = "bluesky-firehose-stream"
 description = "Decode bluesky firehose messages"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2024"
 license = "MIT"
 
@@ -36,9 +36,8 @@ futures = "0.3"
 tracing = "0.1"
 chrono = "0.4"
 serde_ipld_dagcbor = "0.6"
-rs-car-sync = "0.4"
+rs-car-sync = "0.5"
 cid = "0.11"
-cid_old = { package = "cid", version = "0.10" }
 multihash = "0.19"
 thiserror = "2"
 ipld-core = "0.4"
