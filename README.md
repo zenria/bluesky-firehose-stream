@@ -58,7 +58,7 @@ cargo run --example bluesky-prometheus-exporter --features examples
 
 ## TLS backend
 
-By default, this crate depends on `native-tls` for handling TLS when connecting to the fireshose. To switch to `rustls` backend,
+By default, this crate depends on `native-tls` for handling TLS when connecting to the firehose. To switch to `rustls` backend,
 use `rustls-tls-native-roots` or `rustls-tls-webpki-roots` features.
 
 eg.
